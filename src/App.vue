@@ -1,26 +1,42 @@
 <template>
-  <img alt="Vue logo" src="./assets/logo.png">
-  <HelloWorld msg="Welcome to Your Vue.js App"/>
+  <div id="app">
+    <!-- Navbar -->
+    <AppNavbar />
+
+    <!-- Contenido dinámico -->
+    <b-container fluid class="main-content">
+      <router-view />
+    </b-container>
+
+    <!-- Footer -->
+    <AppFooter />
+  </div>
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
+import AppNavbar from '@/components/AppNavbar.vue';
+import AppFooter from '@/components/AppFooter.vue';
 
 export default {
   name: 'App',
   components: {
-    HelloWorld
-  }
-}
+    AppNavbar,
+    AppFooter,
+  },
+  created() {
+    if (!this.$store.state.games.length) {
+      this.$store.dispatch('fetchGames');
+    }
+  },
+};
 </script>
 
 <style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
+/* Contenedor principal */
+.main-content {
+  min-height: calc(100vh - 120px); /* Ajuste para espacio entre Navbar y Footer */
+  background-color: #1e1e2d;
+  color: rgba(144, 95, 181, 0.99);
+  padding: 20px 0;
 }
 </style>
