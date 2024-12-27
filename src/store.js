@@ -1,4 +1,5 @@
 import { createStore } from 'vuex';
+import persistStore from "./plugins/vuex-persist";
 
 export default createStore({
     state: {
@@ -6,8 +7,30 @@ export default createStore({
         loading: false, // Estado de carga
         error: null, // Manejo de errores
         reviews: {}, // Diccionario de opiniones por slug
+        users: {},
+        currentUser: "",
     },
     mutations: {
+        removeCoinFromGame(state, { gameSlug, username }) {
+            const user = state.users[username];
+            if (!user) return;
+
+            if (user.likes.includes(gameSlug) && user.coinsByGame[gameSlug] > 0) {
+                user.coinsByGame[gameSlug] -= 1; // Reducir monedas asignadas al juego
+                user.coins += 1; // Restaurar moneda al total disponible
+            }
+        },
+        registerUser(state, username) {
+            if (!state.users[username]) {
+                state.users[username] = { likes: [], coins: 50, coinsByGame: [] }; // Inicializa al usuario con un array vacío de likes
+            }
+        },
+        setCurrentUser(state, username) {
+            state.currentUser = username;
+        },
+        logoutUser(state) {
+            state.currentUser = "";
+        },
         setGames(state, games) {
             state.games = games;
         },
@@ -16,6 +39,36 @@ export default createStore({
         },
         setError(state, error) {
             state.error = error;
+        },
+        addLike(state, { gameSlug, username }) {
+            const user = state.users[username];
+            if (!user) {
+                state.users[username] = { likes: [], coins: 50, coinsByGame: {} };
+            }
+
+            const likes = state.users[username].likes;
+            const likeIndex = likes.indexOf(gameSlug);
+
+            if (likeIndex === -1) {
+                // Agregar el juego a "likes"
+                likes.push(gameSlug);
+                user.coinsByGame[gameSlug] = 0; // Inicializar las monedas asignadas a 0
+            } else {
+                // Eliminar el juego de "likes"
+                likes.splice(likeIndex, 1);
+                const coinsToRestore = user.coinsByGame[gameSlug];
+                user.coins += coinsToRestore; // Restaurar monedas al total
+                delete user.coinsByGame[gameSlug]; // Eliminar el registro del juego
+            }
+        },
+        addCoinToGame(state, { gameSlug, username }) {
+            const user = state.users[username];
+            if (!user) return;
+
+            if (user.likes.includes(gameSlug) && user.coins > 0) {
+                user.coins -= 1; // Restar una moneda del total
+                user.coinsByGame[gameSlug] += 1; // Sumar una moneda al juego
+            }
         },
         addOpinion(state, { gameSlug, opinion }) {
             if (!state.reviews[gameSlug]) {
@@ -42,6 +95,42 @@ export default createStore({
         },
     },
     actions: {
+        removeCoinFromGame({ commit, state }, gameSlug) {
+            const currentUser = state.currentUser;
+            if (currentUser) {
+                commit("removeCoinFromGame", { gameSlug, username: currentUser });
+            } else {
+                throw new Error("El usuario no está autenticado.");
+            }
+        },
+        addCoinToGame({ commit, state }, gameSlug) {
+            const currentUser = state.currentUser;
+            if (currentUser) {
+                commit("addCoinToGame", { gameSlug, username: currentUser });
+            } else {
+                throw new Error("El usuario no está autenticado.");
+            }
+        },
+        toggleLike({ state, commit }, gameId) {
+            const currentUser = state.currentUser;
+            if (currentUser) {
+                commit("addLike", { gameSlug: gameId, username: currentUser });
+            } else {
+                throw new Error("El usuario no está autenticado.");
+            }
+        },
+        login({ commit }, username) {
+            commit("setCurrentUser", username);
+        },
+        logout({ commit }) {
+            commit("logoutUser");
+        },
+        registerUser({ state, commit }, username) {
+            if (!state.users[username]) {
+                commit("registerUser", username);
+            }
+            commit("setCurrentUser", username);
+        },
         async fetchGames({ commit }) {
             commit("setLoading", true); // Inicia el estado de carga
             commit("setError", null); // Limpia errores anteriores
@@ -86,7 +175,11 @@ export default createStore({
                 commit("setLoading", false);
             }
         },
-
+        addLike({ commit, state }, payload) {
+            if (state.currentUser) {
+                commit("addLike", { ...payload, username: state.currentUser });
+            }
+        },
         addOpinion({ commit }, payload) {
             commit("addOpinion", payload);
         },
@@ -98,6 +191,37 @@ export default createStore({
         },
     },
     getters: {
+        currentUserCoins(state) {
+            const currentUser = state.currentUser;
+            return currentUser && state.users[currentUser]
+                ? state.users[currentUser].coins
+                : 0;
+        },
+        coinsByGame(state) {
+            const currentUser = state.currentUser;
+            return currentUser && state.users[currentUser]
+                ? state.users[currentUser].coinsByGame
+                : {};
+        },
+        currentUserLikes(state) {
+            const currentUser = state.currentUser;
+            if (currentUser && state.users[currentUser]) {
+                return state.users[currentUser].likes || [];
+            }
+            return [];
+        },
+        currentUser(state) {
+            return state.currentUser;
+        },
+        isLoggedIn(state) {
+            return !!state.currentUser;
+        },
+        getCurrentUserLikes: (state) => {
+            if (state.currentUser && state.users[state.currentUser]) {
+                return state.users[state.currentUser].likes || [];
+            }
+            return [];
+        },
         allGames(state) {
             return state.games;
         },
@@ -117,4 +241,5 @@ export default createStore({
             return state.games.find((game) => game.slug === slug);
         },
     },
+    plugins: [persistStore],
 });

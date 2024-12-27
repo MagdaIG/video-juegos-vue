@@ -13,8 +13,8 @@ const routes = [
     component: () => import('../views/OpinionesView.vue'), // Lazy Loading
   },
   {
-    path: '/admin',
-    name: 'Admin',
+    path: '/administracion', // Cambié el nombre de la ruta para que sea más descriptivo
+    name: 'Administracion',
     component: () => import('../views/AdminView.vue'),
   },
   {

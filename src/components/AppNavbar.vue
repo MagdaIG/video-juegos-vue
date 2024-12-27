@@ -22,6 +22,12 @@
           </b-button>
         </b-form>
       </div>
+      <b-button type="submit" variant="light" class="search-button" @click="adminPage" v-if="showLogoutButton">
+        <i class="fas fa-id-card" aria-hidden="true"></i>
+      </b-button>
+      <b-button type="submit" variant="light" class="search-button" @click="handleLogout" v-if="showLogoutButton">
+        <i class="fas fa-sign-out"></i>
+      </b-button>
     </b-container>
   </b-navbar>
 </template>
@@ -37,9 +43,19 @@ export default {
     };
   },
   computed: {
+    ...mapGetters(["currentUser"]),
+    showLogoutButton() {
+      return !!this.currentUser;
+    },
     ...mapGetters(["allGames"]),
   },
   methods: {
+    handleLogout() {
+      this.$store.dispatch("logout");
+    },
+    adminPage() {
+      this.$router.push("/administracion");
+    },
     ...mapActions(["searchGames"]), // Acción para buscar juegos en la API
     handleSearch() {
       if (this.searchQuery.trim()) {
