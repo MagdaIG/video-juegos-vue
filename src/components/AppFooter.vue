@@ -17,12 +17,12 @@ export default {
 </script>
 
 <style scoped>
-/* Footer personalizado */
+
 .footer-custom {
-  background-color: #6a11cb;
+  background: linear-gradient(45deg, rgba(113, 64, 159, 0.99), #182848) !important;
+  font-family: 'Roboto', sans-serif;
   color: #ffffff;
   padding: 20px 0;
-  font-family: 'Roboto', sans-serif;
   font-size: 14px;
 }
 

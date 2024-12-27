@@ -28,7 +28,10 @@ export default createStore({
             if (opinions) {
                 const index = opinions.findIndex((op) => op.id === id);
                 if (index !== -1) {
-                    state.reviews[gameSlug][index] = { ...state.reviews[gameSlug][index], ...updatedOpinion };
+                    state.reviews[gameSlug][index] = {
+                        ...state.reviews[gameSlug][index],
+                        ...updatedOpinion,
+                    };
                 }
             }
         },
@@ -60,6 +63,30 @@ export default createStore({
                 commit("setLoading", false); // Finaliza el estado de carga
             }
         },
+
+        // Nueva acción para buscar juegos por query
+        async searchGames({ commit }, query) {
+            commit("setLoading", true);
+            commit("setError", null);
+
+            try {
+                const apiKey = process.env.VUE_APP_RAWG_API_KEY;
+                const response = await fetch(
+                    `https://api.rawg.io/api/games?search=${query}&key=${apiKey}`
+                );
+                if (!response.ok) {
+                    throw new Error("Error al buscar juegos en la API");
+                }
+                const data = await response.json();
+                commit("setGames", data.results); // Actualiza los juegos en el estado
+            } catch (error) {
+                console.error("Error en searchGames:", error.message);
+                commit("setError", error.message);
+            } finally {
+                commit("setLoading", false);
+            }
+        },
+
         addOpinion({ commit }, payload) {
             commit("addOpinion", payload);
         },
